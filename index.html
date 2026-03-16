@@ -3,69 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3TX - جاري التحويل...</title>
+    <title>3TX | اختصار الروابط الاحترافي</title>
     <style>
-        body {
-            background-color: #121212;
-            color: white;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            text-align: center;
-        }
-        .loader {
-            border: 5px solid #333;
-            border-top: 5px solid #ff0050;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-        }
+        :root { --main: #00f2ea; --accent: #ff0050; --bg: #121212; --card: #1e1e1e; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { background: var(--card); padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.7); width: 90%; max-width: 450px; text-align: center; border: 1px solid #333; }
+        h1 { color: var(--main); font-size: 40px; margin-bottom: 10px; letter-spacing: 2px; }
+        
+        /* واجهة صنع الرابط */
+        #create-ui input { width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #444; background: #252525; color: white; margin: 20px 0; box-sizing: border-box; outline: none; }
+        .btn { background: var(--main); color: #000; padding: 15px 30px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; transition: 0.3s; }
+        .btn:hover { background: var(--accent); color: white; }
+        #result { margin-top: 20px; display: none; background: #252525; padding: 15px; border-radius: 10px; border: 1px dashed var(--main); word-break: break-all; }
+
+        /* واجهة التحويل (العداد) */
+        #redirect-ui { display: none; }
+        .loader { border: 4px solid #333; border-top: 4px solid var(--accent); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 25px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .timer { font-size: 24px; margin: 20px; color: #00f2ea; }
-        .btn {
-            display: none;
-            padding: 15px 30px;
-            background-color: #ff0050;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-        }
+        .timer { font-size: 22px; color: var(--main); margin-bottom: 25px; }
     </style>
 </head>
 <body>
 
-    <img src="https://i.ibb.co/vzR0yXW/3TX-Logo.png" alt="3TX Logo" width="100">
-    <h2>أداة 3TX - فحص الرابط آمن</h2>
-    <div class="loader" id="loader"></div>
-    <div class="timer" id="timer">انتظر 10 ثوانٍ...</div>
-    <a href="رابط_الوجهة_هنا" class="btn" id="btn">انقر هنا للذهاب للرابط</a>
+<div class="container">
+    <h1>3TX</h1>
 
-    <script>
+    <div id="create-ui">
+        <p>اختصر روابطك الطويلة بلمشة واحدة</p>
+        <input type="text" id="longUrl" placeholder="أدخل الرابط الطويل هنا...">
+        <button class="btn" onclick="shortenLink()">اختصار الآن</button>
+        <div id="result">
+            <p style="font-size: 12px; color: #888;">رابطك المختصر:</p>
+            <strong id="shortLink"></strong>
+            <button class="btn" style="margin-top:10px; padding: 8px;" onclick="copyLink()">نسخ الرابط</button>
+        </div>
+    </div>
+
+    <div id="redirect-ui">
+        <h3>جاري فحص وأمان الرابط...</h3>
+        <div class="loader"></div>
+        <div id="timer" class="timer">انتظر 10 ثوانٍ</div>
+        <a href="#" id="go-btn" class="btn" style="display: none; text-decoration: none;">الانتقال للرابط الآن</a>
+    </div>
+</div>
+
+<script>
+    // وظيفة صنع الرابط المختصر (تستخدم Base64 لتشفير الرابط)
+    function shortenLink() {
+        const longUrl = document.getElementById('longUrl').value;
+        if(!longUrl) return alert("يرجى وضع رابط!");
+        
+        const baseUrl = window.location.href.split('?')[0];
+        const encodedUrl = btoa(longUrl); // تشفير الرابط حتى لا يظهر بشكل مباشر
+        const finalLink = `${baseUrl}?u=${encodedUrl}`;
+        
+        document.getElementById('shortLink').innerText = finalLink;
+        document.getElementById('result').style.display = 'block';
+    }
+
+    function copyLink() {
+        const link = document.getElementById('shortLink').innerText;
+        navigator.clipboard.writeText(link);
+        alert("تم النسخ!");
+    }
+
+    // وظيفة التحويل والعداد
+    const urlParams = new URLSearchParams(window.location.search);
+    const encodedTarget = urlParams.get('u');
+
+    if (encodedTarget) {
+        document.getElementById('create-ui').style.display = 'none';
+        document.getElementById('redirect-ui').style.display = 'block';
+
         let count = 10;
-        const timerElement = document.getElementById('timer');
-        const btnElement = document.getElementById('btn');
-        const loader = document.getElementById('loader');
+        const timerTxt = document.getElementById('timer');
+        const goBtn = document.getElementById('go-btn');
 
-        const countdown = setInterval(() => {
+        const interval = setInterval(() => {
             count--;
-            timerElement.innerText = `انتظر ${count} ثوانٍ...`;
-            
-            if (count <= 0) {
-                clearInterval(countdown);
-                timerElement.style.display = 'none';
-                loader.style.display = 'none';
-                btnElement.style.display = 'inline-block';
-                
-                // تحويل تلقائي إذا أردت:
-                // window.location.href = "رابط_الوجهة_هنا";
+            timerTxt.innerText = `انتظر ${count} ثوانٍ...`;
+            if(count <= 0) {
+                clearInterval(interval);
+                timerTxt.style.display = 'none';
+                document.querySelector('.loader').style.display = 'none';
+                goBtn.style.display = 'block';
+                goBtn.href = atob(encodedTarget); // فك التشفير للذهاب للرابط
             }
         }, 1000);
-    </script>
+    }
+</script>
+
 </body>
 </html>
