@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3TX - جاري التحويل...</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .loader {
+            border: 5px solid #333;
+            border-top: 5px solid #ff0050;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .timer { font-size: 24px; margin: 20px; color: #00f2ea; }
+        .btn {
+            display: none;
+            padding: 15px 30px;
+            background-color: #ff0050;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <img src="https://i.ibb.co/vzR0yXW/3TX-Logo.png" alt="3TX Logo" width="100">
+    <h2>أداة 3TX - فحص الرابط آمن</h2>
+    <div class="loader" id="loader"></div>
+    <div class="timer" id="timer">انتظر 10 ثوانٍ...</div>
+    <a href="رابط_الوجهة_هنا" class="btn" id="btn">انقر هنا للذهاب للرابط</a>
+
+    <script>
+        let count = 10;
+        const timerElement = document.getElementById('timer');
+        const btnElement = document.getElementById('btn');
+        const loader = document.getElementById('loader');
+
+        const countdown = setInterval(() => {
+            count--;
+            timerElement.innerText = `انتظر ${count} ثوانٍ...`;
+            
+            if (count <= 0) {
+                clearInterval(countdown);
+                timerElement.style.display = 'none';
+                loader.style.display = 'none';
+                btnElement.style.display = 'inline-block';
+                
+                // تحويل تلقائي إذا أردت:
+                // window.location.href = "رابط_الوجهة_هنا";
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
