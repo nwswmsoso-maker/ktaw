@@ -2,94 +2,85 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3TX - اختصار الروابط</title>
+    <title>3TX - اختصار روابط حقيقي</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        :root { --main: #00f2ea; --accent: #ff0050; --bg: #0f0f0f; }
-        body { background: var(--bg); color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .box { background: #1a1a1a; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; text-align: center; border: 1px solid #333; }
-        h1 { color: var(--main); font-size: 45px; margin: 0 0 10px; font-style: italic; }
-        input { width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #444; background: #222; color: white; margin: 15px 0; box-sizing: border-box; outline: none; }
-        .btn { background: var(--main); color: #000; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; transition: 0.3s; }
-        .btn:hover { background: var(--accent); color: white; }
-        #result-box { display: none; margin-top: 20px; background: #252525; padding: 15px; border-radius: 10px; border: 1px dashed var(--main); }
-        .loader { border: 4px solid #333; border-top: 4px solid var(--accent); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; display: none; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* نفس التصميم السابق (أسود وفيروزي) */
+        body { background: #0f0f0f; color: white; font-family: sans-serif; text-align: center; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .box { background: #1a1a1a; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; border: 1px solid #333; }
+        input { width: 100%; padding: 15px; margin: 15px 0; border-radius: 10px; border: 1px solid #444; background: #222; color: white; box-sizing: border-box; }
+        .btn { background: #00f2ea; color: black; padding: 15px; width: 100%; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        #result { margin-top: 20px; padding: 10px; border: 1px dashed #00f2ea; display: none; word-break: break-all; }
     </style>
 </head>
 <body>
 
 <div class="box">
     <h1>3TX</h1>
-
-    <div id="shortener-ui">
-        <p>أدخل الرابط الطويل لاختصاره</p>
-        <input type="text" id="longUrl" placeholder="https://example.com/very-long-link">
-        <button class="btn" onclick="makeShort()">اختصار الرابط الآن</button>
-        
-        <div id="result-box">
-            <p style="font-size: 13px; color: #888;">رابطك المختصر جاهز:</p>
-            <strong id="shortLink" style="color: var(--main); word-break: break-all;"></strong>
-            <button class="btn" style="margin-top:10px; background: #444; color: white; padding: 8px;" onclick="copyLink()">نسخ الرابط</button>
+    <div id="main-ui">
+        <input type="text" id="urlInput" placeholder="ضع الرابط الطويل هنا">
+        <button class="btn" onclick="shorten()">اختصار الرابط</button>
+        <div id="result">
+            <p>الرابط القصير:</p>
+            <strong id="shortUrl"></strong>
         </div>
     </div>
 
-    <div id="redirect-ui" style="display: none;">
-        <h3>جاري تجهيز الرابط...</h3>
-        <div class="loader" id="loader" style="display: block;"></div>
-        <div id="timer" style="font-size: 24px; color: var(--main); margin: 20px;">10</div>
-        <a href="#" id="go-btn" class="btn" style="display: none; text-decoration: none;">انقر هنا للذهاب للرابط</a>
+    <div id="redirect-ui" style="display:none;">
+        <h3>جاري التحويل...</h3>
+        <div id="timer" style="font-size: 30px; color: #ff0050;">10</div>
     </div>
 </div>
 
 <script>
-    // 1. وظيفة اختصار الرابط
-    function makeShort() {
-        let longUrl = document.getElementById('longUrl').value;
-        if (!longUrl) return alert("حط رابط أولاً!");
-        
-        // تشفير الرابط حتى يصير شكل الاختصار احترافي
-        let encoded = btoa(longUrl); 
-        let currentUrl = window.location.href.split('?')[0];
-        let finalResult = currentUrl + "?id=" + encoded;
+    // --- (هنا تضع معلومات Firebase الخاصة بك) ---
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        databaseURL: "YOUR_DATABASE_URL",
+        projectId: "YOUR_PROJECT_ID",
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-        document.getElementById('shortLink').innerText = finalResult;
-        document.getElementById('result-box').style.display = 'block';
+    // 1. وظيفة الاختصار (خزن في القاعدة)
+    function shorten() {
+        const longUrl = document.getElementById('urlInput').value;
+        if(!longUrl) return alert("حط رابط!");
+
+        const id = Date.now().toString().slice(-5); // يسوي رقم قصير من 5 مراتب
+        db.ref('links/' + id).set(longUrl).then(() => {
+            const short = window.location.href.split('?')[0] + "?id=" + id;
+            document.getElementById('shortUrl').innerText = short;
+            document.getElementById('result').style.display = 'block';
+        });
     }
 
-    function copyLink() {
-        let text = document.getElementById('shortLink').innerText;
-        navigator.clipboard.writeText(text);
-        alert("تم النسخ!");
-    }
-
-    // 2. وظيفة الكشف والتحويل
+    // 2. وظيفة التحويل (قراءة من القاعدة)
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id');
 
-    if (id) {
-        // إذا دخل المستخدم عن طريق رابط مختصر
-        document.getElementById('shortener-ui').style.display = 'none';
+    if(id) {
+        document.getElementById('main-ui').style.display = 'none';
         document.getElementById('redirect-ui').style.display = 'block';
 
-        let timeLeft = 10;
-        let timerDisplay = document.getElementById('timer');
-        let goBtn = document.getElementById('go-btn');
-        let loader = document.getElementById('loader');
-
-        let countdown = setInterval(() => {
-            timeLeft--;
-            timerDisplay.innerText = timeLeft;
-            if (timeLeft <= 0) {
-                clearInterval(countdown);
-                timerDisplay.style.display = 'none';
-                loader.style.display = 'none';
-                goBtn.style.display = 'block';
-                goBtn.href = atob(id); // فك التشفير للذهاب للرابط الأصلي
+        db.ref('links/' + id).once('value').then((snapshot) => {
+            const target = snapshot.val();
+            if(target) {
+                let time = 10;
+                let inter = setInterval(() => {
+                    time--;
+                    document.getElementById('timer').innerText = time;
+                    if(time <= 0) {
+                        clearInterval(inter);
+                        window.location.href = target;
+                    }
+                }, 1000);
+            } else {
+                alert("الرابط غير موجود!");
             }
-        }, 1000);
+        });
     }
 </script>
-
 </body>
 </html>
