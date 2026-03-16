@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3TX | اختصار الروابط الحقيقي</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        :root { --main: #00f2ea; --accent: #ff0050; --bg: #0f0f0f; }
+        body { background: var(--bg); color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .box { background: #1a1a1a; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #333; }
+        h1 { color: var(--main); font-size: 50px; margin: 0; font-style: italic; text-shadow: 2px 2px var(--accent); }
+        input { width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #444; background: #222; color: white; margin: 20px 0; box-sizing: border-box; outline: none; }
+        .btn { background: var(--main); color: #000; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
+        #res-box { display: none; margin-top: 20px; background: #252525; padding: 15px; border-radius: 10px; border: 1px dashed var(--main); }
+        #timer { font-size: 40px; color: var(--accent); margin: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h1>3TX</h1>
+
+    <div id="ui-create">
+        <p>أدخل الرابط الطويل للحصول على كود قصير</p>
+        <input type="url" id="longUrl" placeholder="https://example.com/link-123">
+        <button class="btn" onclick="shorten()">اختصار الرابط الآن</button>
+        <div id="res-box">
+            <p style="font-size: 12px; color: #888;">رابطك القصير:</p>
+            <strong id="shortLink" style="color: var(--main); word-break: break-all;"></strong>
+            <button class="btn" style="margin-top:10px; background:#444; color:white; padding:8px;" onclick="copy()">نسخ</button>
+        </div>
+    </div>
+
+    <div id="ui-redirect" style="display:none;">
+        <h3>جاري تجهيز الرابط...</h3>
+        <div id="timer">10</div>
+        <p>سيتم تحويلك تلقائياً</p>
+    </div>
+</div>
+
+<script>
+    // --- (إعدادات Firebase - لازم تحط مالتك هنا) ---
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        databaseURL: "YOUR_DATABASE_URL",
+        projectId: "YOUR_PROJECT_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // 1. وظيفة الاختصار (خزن)
+    function shorten() {
+        let url = document.getElementById('longUrl').value;
+        if(!url) return alert("حط رابط!");
+        
+        let id = Math.random().toString(36).substr(2, 5); // يسوي كود من 5 حروف فقط
+        db.ref('links/' + id).set(url).then(() => {
+            let short = window.location.href.split('?')[0] + "?id=" + id;
+            document.getElementById('shortLink').innerText = short;
+            document.getElementById('res-box').style.display = 'block';
+        });
+    }
+
+    function copy() {
+        navigator.clipboard.writeText(document.getElementById('shortLink').innerText);
+        alert("تم النسخ!");
+    }
+
+    // 2. وظيفة التحويل (قراءة)
+    const urlParams = new URLSearchParams(window.location.search);
+    const linkId = urlParams.get('id');
+
+    if(linkId) {
+        document.getElementById('ui-create').style.display = 'none';
+        document.getElementById('ui-redirect').style.display = 'block';
+
+        db.ref('links/' + linkId).once('value').then((snap) => {
+            let target = snap.val();
+            if(target) {
+                let time = 10;
+                let countdown = setInterval(() => {
+                    time--;
+                    document.getElementById('timer').innerText = time;
+                    if(time <= 0) {
+                        clearInterval(countdown);
+                        window.location.href = target;
+                    }
+                }, 1000);
+            } else {
+                alert("الرابط منتهي أو غير موجود!");
+                window.location.href = window.location.href.split('?')[0];
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
